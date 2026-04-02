@@ -52,9 +52,9 @@ int zmk_pm_suspend_devices(void) {
         if ((ret == -ENOSYS) || (ret == -ENOTSUP) || (ret == -EALREADY)) {
             continue;
         } else if (ret < 0) {
-            LOG_ERR("Device %s did not enter %s state (%d)", dev->name,
-                    pm_device_state_str(PM_DEVICE_STATE_SUSPENDED), ret);
-            return ret;
+            LOG_WRN("Device %s did not enter %s state (%d), skipping",
+                    dev->name, pm_device_state_str(PM_DEVICE_STATE_SUSPENDED), ret);
+            continue;
         }
 
         TYPE_SECTION_START(pm_device_slots)[zmk_num_susp] = dev;
@@ -74,8 +74,6 @@ void zmk_pm_resume_devices(void) {
 #endif /* !CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE */
 #endif /* CONFIG_ZMK_PM_DEVICE_SUSPEND_RESUME */
 
-#if IS_ENABLED(CONFIG_ZMK_PM_SOFT_OFF)
-
 #define HAS_WAKERS DT_HAS_COMPAT_STATUS_OKAY(zmk_soft_off_wakeup_sources)
 
 #if HAS_WAKERS
@@ -87,24 +85,16 @@ const struct device *soft_off_wakeup_sources[] = {
 
 #endif
 
-int zmk_pm_soft_off(void) {
+void zmk_pm_prepare_for_poweroff(void) {
 #if IS_ENABLED(CONFIG_PM_DEVICE)
     size_t device_count;
     const struct device *devs;
 
-#if !IS_ENABLED(CONFIG_ZMK_SPLIT) || IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
-    zmk_endpoint_clear_reports();
-    // Need to sleep to give any other threads a chance so submit endpoint data.
-    k_sleep(K_MSEC(100));
-#endif
-
     device_count = z_device_get_all_static(&devs);
 
-    // There may be some matrix/direct kscan devices that would be used for wakeup
-    // from normal "inactive goes to sleep" behavior, so disable them as wakeup devices
-    // and then suspend them so we're ready to take over setting up our system
-    // and then putting it into an off state.
-    LOG_DBG("soft-on-off pressed cb: suspend devices");
+    // Disable all wakeup sources and suspend all devices so we can
+    // selectively re-enable only the designated wakeup sources.
+    LOG_DBG("Preparing for poweroff: suspend devices");
     for (int i = 0; i < device_count; i++) {
         const struct device *dev = &devs[i];
 
@@ -122,6 +112,18 @@ int zmk_pm_soft_off(void) {
         pm_device_action_run(dev, PM_DEVICE_ACTION_RESUME);
     }
 #endif // HAS_WAKERS
+}
+
+#if IS_ENABLED(CONFIG_ZMK_PM_SOFT_OFF)
+
+int zmk_pm_soft_off(void) {
+#if !IS_ENABLED(CONFIG_ZMK_SPLIT) || IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
+    zmk_endpoint_clear_reports();
+    // Need to sleep to give any other threads a chance so submit endpoint data.
+    k_sleep(K_MSEC(100));
+#endif
+
+    zmk_pm_prepare_for_poweroff();
 
     int err = zmk_pm_suspend_devices();
     if (err < 0) {

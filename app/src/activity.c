@@ -79,6 +79,11 @@ void activity_work_handler(struct k_work *work) {
         // Put devices in suspend power mode before sleeping
         set_state(ZMK_ACTIVITY_SLEEP);
 
+        // Disable all wakeup sources, suspend all devices, then
+        // re-enable only the designated wakeup sources (e.g. kscan)
+        // so GPIO SENSE wake works correctly from SYSTEMOFF.
+        zmk_pm_prepare_for_poweroff();
+
         if (zmk_pm_suspend_devices() < 0) {
             LOG_ERR("Failed to suspend all the devices");
             zmk_pm_resume_devices();

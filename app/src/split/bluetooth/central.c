@@ -30,11 +30,14 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/events/position_state_changed.h>
 #include <zmk/events/sensor_event.h>
 #include <zmk/events/battery_state_changed.h>
+#include <zmk/events/activity_state_changed.h>
 #include <zmk/pointing/input_split.h>
 #include <zmk/hid_indicators_types.h>
 #include <zmk/physical_layouts.h>
+#include <zmk/activity.h>
 
 static int start_scanning(void);
+static int split_central_bt_set_enabled(bool enabled);
 
 #define POSITION_STATE_DATA_LEN 16
 
@@ -1161,11 +1164,21 @@ static int zmk_split_bt_central_listener_cb(const zmk_event_t *eh) {
     if (as_zmk_physical_layout_selection_changed(eh)) {
         k_work_submit(&update_peripherals_selected_layouts_work);
     }
+
+    const struct zmk_activity_state_changed *activity_ev = as_zmk_activity_state_changed(eh);
+    if (activity_ev) {
+        if (activity_ev->state == ZMK_ACTIVITY_SLEEP) {
+            LOG_DBG("Sleep state detected, disabling BLE central");
+            split_central_bt_set_enabled(false);
+        }
+    }
+
     return ZMK_EV_EVENT_BUBBLE;
 }
 
 ZMK_LISTENER(zmk_split_bt_central, zmk_split_bt_central_listener_cb);
 ZMK_SUBSCRIPTION(zmk_split_bt_central, zmk_physical_layout_selection_changed);
+ZMK_SUBSCRIPTION(zmk_split_bt_central, zmk_activity_state_changed);
 
 static int split_central_bt_send_command(uint8_t source,
                                          struct zmk_split_transport_central_command cmd) {
