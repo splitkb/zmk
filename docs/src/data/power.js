@@ -63,6 +63,15 @@ export const zmkBoards = {
     },
     otherQuiescentMicroA: 4,
   },
+  "Halcyon wireless": {
+    name: "halcyon",
+    powerSupply: {
+      type: "LDO",
+      outputVoltage: 3.3,
+      quiescentMicroA: 1,
+    },
+    otherQuiescentMicroA: 1,
+  },
 };
 
 export const underglowPower = {
@@ -101,5 +110,10 @@ export const displayPower = {
     activePercent: 0.01, // Estimated two refreshes per second taking five milliseconds each
     active: 1425, // Power draw during refresh (225uA display + 1200uA SPIM)
     sleep: 1, // Idle power draw of the display
+  },
+  HALCYON_EPAPER: {
+    activePercent: 0.01, // Estimated one refresh per minute taking three seconds
+    active: 1500, // Power draw during refresh
+    sleep: 20, // Idle power draw of an epaper
   },
 };
