@@ -6,3 +6,13 @@ description: Battery SoC monitoring using voltage divider
 compatible: "zmk,battery-voltage-divider"
 
 include: voltage-divider.yaml
+
+properties:
+  power-on-sample-delay-us:
+    type: int
+    default: 100
+    description: |
+      Duration to delay sampling after enabling the circuitry with
+      `power-gpios`. In most cases the switched voltage rail will
+      require some non-zero time to settle to its final value. The
+      default value of 100us should be sufficient in most situations.
