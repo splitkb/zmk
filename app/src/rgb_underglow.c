@@ -301,6 +301,12 @@ int zmk_rgb_underglow_on(void) {
     if (!led_strip)
         return -ENODEV;
 
+#if IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW_DISABLE_WHEN_USB_DISCONNECTED)
+    if (!zmk_usb_is_powered()) {
+        return -EACCES;
+    }
+#endif
+
 #if IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW_EXT_POWER)
     if (ext_power != NULL) {
         int rc = ext_power_enable(ext_power);
