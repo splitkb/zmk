@@ -13,6 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/drivers/gpio.h>
+#include <zmk/usb.h>
 
 #include <drivers/ext_power.h>
 
@@ -59,6 +60,12 @@ int ext_power_save_state(void) {
 static int ext_power_generic_enable(const struct device *dev) {
     struct ext_power_generic_data *data = dev->data;
     const struct ext_power_generic_config *config = dev->config;
+
+#if IS_ENABLED(CONFIG_ZMK_EXT_POWER_DISABLE_WHEN_USB_DISCONNECTED)
+    if (!zmk_usb_is_powered()) {
+        return -EACCES;
+    }
+#endif
 
     for (int i = 0; i < config->control_gpios_count; i++) {
         const struct gpio_dt_spec *gpio = &config->control[i];
@@ -137,7 +144,15 @@ static int ext_power_settings_commit() {
         k_work_schedule(&ext_power_save_work, K_NO_WAIT);
 
         if (IS_ENABLED(CONFIG_ZMK_EXT_POWER_START)) {
+#if IS_ENABLED(CONFIG_ZMK_EXT_POWER_DISABLE_WHEN_USB_DISCONNECTED)
+            if (zmk_usb_is_powered()) {
+                ext_power_enable(dev);
+            } else {
+                ext_power_disable(dev);
+            }
+#else
             ext_power_enable(dev);
+#endif
         } else {
             ext_power_disable(dev);
         }
