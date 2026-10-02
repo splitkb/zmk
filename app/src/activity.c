@@ -87,10 +87,19 @@ void activity_work_handler(struct k_work *work) {
         IS_ENABLED(CONFIG_ZMK_SLEEP_PREVENT_WHILE_USB_POWERED) && is_usb_power_present();
 #if IS_ENABLED(CONFIG_ZMK_SLEEP_PREVENT_WHILE_BLE_CONNECTED)
 #if !IS_ENABLED(CONFIG_ZMK_SPLIT) || IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
-    prevent_sleep |= zmk_ble_active_profile_is_connected();
+    bool ble_connected = zmk_ble_active_profile_is_connected();
 #else
-    prevent_sleep |= zmk_split_bt_peripheral_is_connected();
+    bool ble_connected = zmk_split_bt_peripheral_is_connected();
 #endif
+    static bool was_ble_connected = false;
+
+    if (was_ble_connected && !ble_connected) {
+        activity_last_uptime = current;
+        inactive_time = 0;
+    }
+
+    was_ble_connected = ble_connected;
+    prevent_sleep |= ble_connected;
 #endif
     if (inactive_time > MAX_SLEEP_MS && !prevent_sleep) {
         // Put devices in suspend power mode before sleeping
