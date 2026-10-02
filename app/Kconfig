@@ -437,6 +437,10 @@ config ZMK_SLEEP_PREVENT_WHILE_USB_POWERED
     bool "Prevent sleeping while USB power is connected"
     default y
 
+config ZMK_SLEEP_POWER_OFF_ON_SUSPEND_FAILURE
+    bool "Power off even if device suspend fails"
+    default n
+
 endif # ZMK_SLEEP
 
 config ZMK_EXT_POWER

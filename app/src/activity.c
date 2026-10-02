@@ -98,8 +98,10 @@ void activity_work_handler(struct k_work *work) {
 
         if (zmk_pm_suspend_devices() < 0) {
             LOG_ERR("Failed to suspend all the devices");
+#if !IS_ENABLED(CONFIG_ZMK_SLEEP_POWER_OFF_ON_SUSPEND_FAILURE)
             zmk_pm_resume_devices();
             return;
+#endif
         }
 
         sys_poweroff();
