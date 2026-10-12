@@ -52,9 +52,9 @@ int zmk_pm_suspend_devices(void) {
         if ((ret == -ENOSYS) || (ret == -ENOTSUP) || (ret == -EALREADY)) {
             continue;
         } else if (ret < 0) {
-            LOG_ERR("Device %s did not enter %s state (%d)", dev->name,
+            LOG_WRN("Device %s did not enter %s state (%d), skipping", dev->name,
                     pm_device_state_str(PM_DEVICE_STATE_SUSPENDED), ret);
-            return ret;
+            continue;
         }
 
         TYPE_SECTION_START(pm_device_slots)[zmk_num_susp] = dev;
