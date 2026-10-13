@@ -230,6 +230,10 @@ config ZMK_BLE_PROFILE_ADVERTISING
     bool "Advertise on BLE profiles"
     default y
 
+config ZMK_BLE_LOW_DUTY_ADVERTISING
+    bool "Enable low duty advertising to reduce current usage during advertising on peripheral"
+    default n
+
 # HID GATT notifications sent this way are *not* picked up by Linux, and possibly others.
 config BT_GATT_NOTIFY_MULTIPLE
     default n

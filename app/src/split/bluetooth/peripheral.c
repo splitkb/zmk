@@ -98,7 +98,11 @@ static void connected(struct bt_conn *conn, uint8_t err) {
 
 static void recycled(void) {
     if (enabled) {
+#if IS_ENABLED(CONFIG_ZMK_BLE_LOW_DUTY_ADVERTISING)
+        low_duty_advertising = true;
+#else
         low_duty_advertising = false;
+#endif
         k_work_submit(&advertising_work);
     }
 }
@@ -243,7 +247,11 @@ static int zmk_peripheral_ble_complete_startup(void) {
     bt_conn_cb_register(&conn_callbacks);
     bt_conn_auth_info_cb_register(&zmk_peripheral_ble_auth_info_cb);
 
+#if IS_ENABLED(CONFIG_ZMK_BLE_LOW_DUTY_ADVERTISING)
+    low_duty_advertising = true;
+#else
     low_duty_advertising = false;
+#endif
 
     settings_loaded = true;
     k_work_submit(&notify_status_work);
